@@ -48,6 +48,7 @@ func (nm nodeMap) get(p Pather) *node {
 // If no path is found, found will be false.
 func Path(from, to Pather) (path []Pather, distance float64, found bool) {
 	nm := nodeMap{}
+	// nq 开放列表
 	nq := &priorityQueue{}
 	heap.Init(nq)
 	fromNode := nm.get(from)
@@ -64,7 +65,7 @@ func Path(from, to Pather) (path []Pather, distance float64, found bool) {
 
 		if current == nm.get(to) {
 			// Found a path to the goal.
-			p := []Pather{}
+			var p []Pather
 			curr := current
 			for curr != nil {
 				p = append(p, curr.pather)
@@ -72,10 +73,12 @@ func Path(from, to Pather) (path []Pather, distance float64, found bool) {
 			}
 			return p, current.cost, true
 		}
-
+		// 遍历相邻节点
 		for _, neighbor := range current.pather.PathNeighbors() {
+			// 老的cost + 当前节点到该邻居节点的cost
 			cost := current.cost + current.pather.PathNeighborCost(neighbor)
 			neighborNode := nm.get(neighbor)
+			// 如果当前的cost小于邻居节点的cost
 			if cost < neighborNode.cost {
 				if neighborNode.open {
 					heap.Remove(nq, neighborNode.index)
@@ -83,9 +86,12 @@ func Path(from, to Pather) (path []Pather, distance float64, found bool) {
 				neighborNode.open = false
 				neighborNode.closed = false
 			}
+			// 把父节点设置为当前节点
+			// 并且把该邻居节点推入开放列表
 			if !neighborNode.open && !neighborNode.closed {
 				neighborNode.cost = cost
 				neighborNode.open = true
+				//起点到该节点的cost + 该节点到终点的cost
 				neighborNode.rank = cost + neighbor.PathEstimatedCost(to)
 				neighborNode.parent = current
 				heap.Push(nq, neighborNode)
